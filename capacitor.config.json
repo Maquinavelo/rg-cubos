@@ -1,0 +1,6 @@
+{
+  "appId": "com.rgabogados.cubos",
+  "appName": "RG Cubos",
+  "webDir": "www",
+  "android": { "backgroundColor": "#87b8e8" }
+}
