@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#87b8e8">
+<title>RG Cubos</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #87b8e8; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #fff; touch-action: none; }
+  canvas#juego { display: block; width: 100vw; height: 100vh; touch-action: none; }
+
+  #mira { position: fixed; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; }
+  #mira::before, #mira::after { content: ""; position: absolute; background: rgba(255,255,255,.9); box-shadow: 0 0 2px rgba(0,0,0,.6); }
+  #mira::before { left: 10px; top: 0; width: 2px; height: 22px; }
+  #mira::after { top: 10px; left: 0; height: 2px; width: 22px; }
+
+  #barra { position: fixed; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom)); transform: translateX(-50%); display: flex; gap: 4px; padding: 4px; background: rgba(0,0,0,.45); border-radius: 8px; }
+  #barra button { width: 44px; height: 44px; padding: 3px; border: 2px solid rgba(255,255,255,.25); border-radius: 6px; background: rgba(0,0,0,.3); touch-action: none; }
+  #barra button.sel { border-color: #ffd54a; background: rgba(255,213,74,.25); }
+  #barra canvas { width: 100%; height: 100%; image-rendering: pixelated; display: block; }
+  #nombreBloque { position: fixed; left: 50%; bottom: calc(68px + env(safe-area-inset-bottom)); transform: translateX(-50%); font-size: 14px; text-shadow: 0 1px 3px #000; opacity: 0; transition: opacity .3s; pointer-events: none; }
+
+  .tactil { display: none; }
+  body.es-tactil .tactil { display: flex; }
+  .btn { position: fixed; align-items: center; justify-content: center; border-radius: 50%; background: rgba(0,0,0,.35); border: 2px solid rgba(255,255,255,.45); color: #fff; font-weight: 600; font-size: 13px; touch-action: none; }
+  .btn.activo { background: rgba(255,213,74,.45); }
+  #bSaltar { right: calc(24px + env(safe-area-inset-right)); bottom: calc(80px + env(safe-area-inset-bottom)); width: 78px; height: 78px; }
+  #bPicar  { right: calc(116px + env(safe-area-inset-right)); bottom: calc(150px + env(safe-area-inset-bottom)); width: 64px; height: 64px; }
+  #bPoner  { right: calc(24px + env(safe-area-inset-right)); bottom: calc(176px + env(safe-area-inset-bottom)); width: 64px; height: 64px; }
+  #bBajar  { right: calc(116px + env(safe-area-inset-right)); bottom: calc(70px + env(safe-area-inset-bottom)); width: 60px; height: 60px; }
+  #bBajar.oculto { display: none !important; }
+
+  #arriba { position: fixed; top: calc(10px + env(safe-area-inset-top)); right: calc(10px + env(safe-area-inset-right)); display: flex; gap: 8px; }
+  #arriba button { padding: 8px 12px; border-radius: 8px; border: 2px solid rgba(255,255,255,.45); background: rgba(0,0,0,.35); color: #fff; font-weight: 600; font-size: 13px; }
+  #arriba button.activo { background: rgba(255,213,74,.45); }
+  #info { position: fixed; top: calc(10px + env(safe-area-inset-top)); left: calc(10px + env(safe-area-inset-left)); font-size: 12px; text-shadow: 0 1px 2px #000; opacity: .85; pointer-events: none; }
+
+  #joyBase { position: fixed; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; background: rgba(255,255,255,.12); border: 2px solid rgba(255,255,255,.35); pointer-events: none; display: none; }
+  #joyPunta { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: rgba(255,255,255,.45); }
+
+  #menu { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(20,30,45,.72); backdrop-filter: blur(3px); }
+  #menu.oculto { display: none; }
+  .tarjeta { width: min(420px, 90vw); max-height: 92vh; overflow: auto; padding: 22px; border-radius: 14px; background: rgba(15,20,30,.9); border: 1px solid rgba(255,255,255,.15); text-align: center; }
+  .tarjeta h1 { margin: 0 0 4px; font-size: 32px; letter-spacing: 1px; }
+  .tarjeta h1 span { color: #ffd54a; }
+  .tarjeta p { margin: 4px 0 14px; font-size: 13px; opacity: .8; }
+  .tarjeta button { display: block; width: 100%; margin: 8px 0; padding: 13px; border: 0; border-radius: 10px; font-size: 16px; font-weight: 700; color: #1b1b1b; background: #ffd54a; }
+  .tarjeta button.sec { background: rgba(255,255,255,.14); color: #fff; }
+  .ayuda { text-align: left; font-size: 12.5px; line-height: 1.5; opacity: .85; margin-top: 10px; }
+  .ayuda b { color: #ffd54a; }
+</style>
+</head>
+<body>
+  <canvas id="juego"></canvas>
+  <div id="mira"></div>
+  <div id="info"></div>
+  <div id="nombreBloque"></div>
+  <div id="barra"></div>
+
+  <div id="arriba">
+    <button id="bVolar">Volar</button>
+    <button id="bMenu">Menú</button>
+  </div>
+
+  <div class="tactil btn" id="bSaltar">Saltar</div>
+  <div class="tactil btn" id="bPicar">Picar</div>
+  <div class="tactil btn" id="bPoner">Poner</div>
+  <div class="tactil btn oculto" id="bBajar">Bajar</div>
+  <div id="joyBase"><div id="joyPunta"></div></div>
+
+  <div id="menu">
+    <div class="tarjeta">
+      <h1>RG <span>Cubos</span></h1>
+      <p>Construye y explora un mundo de bloques</p>
+      <button id="bJugar">Jugar</button>
+      <button id="bNuevo" class="sec">Nuevo mundo</button>
+      <div class="ayuda">
+        <div class="solo-tactil"><b>Celular:</b> mueve con el lado izquierdo de la pantalla, mira arrastrando el dedo a la derecha. Botones <b>Picar</b> y <b>Poner</b> actúan sobre el bloque que señala la mira. Elige el bloque en la barra de abajo.</div>
+        <div class="solo-pc"><b>PC:</b> WASD para moverte, ratón para mirar, clic izquierdo pica, clic derecho pone, espacio salta, F vuela, Shift baja al volar, 1–9 elige bloque.</div>
+        <div style="margin-top:6px">Tu mundo se guarda solo en este dispositivo.</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
